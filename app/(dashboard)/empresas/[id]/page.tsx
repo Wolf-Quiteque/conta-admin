@@ -1,21 +1,16 @@
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { clsx } from "clsx";
-import { asc, desc, eq } from "drizzle-orm";
-import {
-  ChevronLeft,
-  Crown,
-  Receipt as ReceiptIcon,
-  TrendingDown,
-  TrendingUp,
-} from "lucide-react";
+import { asc, count, desc, eq, sql } from "drizzle-orm";
+import { ChevronLeft, Crown, Receipt as ReceiptIcon } from "lucide-react";
 import { db } from "@/lib/db/client";
 import { companies, receipts, users } from "@/lib/db/schema";
-import { formatCurrencyKz, formatDate, formatDateTime } from "@/lib/format";
+import { formatCurrencyKz, formatDate } from "@/lib/format";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { ReceiptGrid } from "@/components/receipts/receipt-grid";
 import { approveCompany, rejectCompany } from "../actions";
+import { RECEIPTS_PAGE_SIZE } from "@/lib/pagination";
 
 export default async function EmpresaDetailPage({
   params,
@@ -31,7 +26,7 @@ export default async function EmpresaDetailPage({
     .limit(1);
   if (!company) notFound();
 
-  const [members, companyReceipts] = await Promise.all([
+  const [members, receiptStats, firstPage] = await Promise.all([
     db
       .select({
         id: users.id,
@@ -43,6 +38,14 @@ export default async function EmpresaDetailPage({
       .from(users)
       .where(eq(users.companyId, id))
       .orderBy(desc(users.isOwner), asc(users.name)),
+    db
+      .select({
+        total: count(),
+        vendas: sql<string>`coalesce(sum(case when ${receipts.type} = 'venda' then ${receipts.amount} else 0 end), 0)`,
+        compras: sql<string>`coalesce(sum(case when ${receipts.type} = 'compra' then ${receipts.amount} else 0 end), 0)`,
+      })
+      .from(receipts)
+      .where(eq(receipts.companyId, id)),
     db
       .select({
         id: receipts.id,
@@ -58,19 +61,14 @@ export default async function EmpresaDetailPage({
       .from(receipts)
       .innerJoin(users, eq(users.id, receipts.userId))
       .where(eq(receipts.companyId, id))
-      .orderBy(desc(receipts.createdAt)),
+      .orderBy(desc(receipts.createdAt), desc(receipts.id))
+      .limit(RECEIPTS_PAGE_SIZE),
   ]);
 
-  const totals = companyReceipts.reduce(
-    (acc, r) => {
-      const value = r.amount ? parseFloat(r.amount) : 0;
-      if (r.type === "venda") acc.vendas += value;
-      else acc.compras += value;
-      return acc;
-    },
-    { vendas: 0, compras: 0 },
-  );
-  const saldo = totals.vendas - totals.compras;
+  const totalReceipts = receiptStats[0]?.total ?? 0;
+  const vendas = parseFloat(receiptStats[0]?.vendas ?? "0");
+  const compras = parseFloat(receiptStats[0]?.compras ?? "0");
+  const saldo = vendas - compras;
 
   return (
     <div className="space-y-6">
@@ -130,19 +128,19 @@ export default async function EmpresaDetailPage({
         <div className="rounded-2xl border border-border bg-surface p-4">
           <p className="text-[12.5px] text-muted-foreground">Recibos</p>
           <p className="mt-1.5 text-xl font-semibold tracking-tight">
-            {companyReceipts.length}
+            {totalReceipts}
           </p>
         </div>
         <div className="rounded-2xl border border-success/30 bg-success/10 p-4">
           <p className="text-[12.5px] text-success/80">Vendas</p>
           <p className="mt-1.5 truncate text-xl font-semibold tracking-tight text-success">
-            {formatCurrencyKz(totals.vendas)}
+            {formatCurrencyKz(vendas)}
           </p>
         </div>
         <div className="rounded-2xl border border-danger/30 bg-danger/10 p-4">
           <p className="text-[12.5px] text-danger/80">Compras</p>
           <p className="mt-1.5 truncate text-xl font-semibold tracking-tight text-danger">
-            {formatCurrencyKz(totals.compras)}
+            {formatCurrencyKz(compras)}
           </p>
         </div>
         <div className="col-span-2 rounded-2xl border border-border bg-surface p-4 sm:col-span-1">
@@ -195,7 +193,7 @@ export default async function EmpresaDetailPage({
           Recibos enviados
         </h2>
 
-        {companyReceipts.length === 0 ? (
+        {totalReceipts === 0 ? (
           <div className="flex flex-col items-center gap-2 rounded-3xl border border-dashed border-border py-16 text-center">
             <ReceiptIcon className="h-6 w-6 text-muted-foreground" />
             <p className="text-[13.5px] text-muted-foreground">
@@ -203,65 +201,11 @@ export default async function EmpresaDetailPage({
             </p>
           </div>
         ) : (
-          <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            {companyReceipts.map((receipt) => (
-              <li key={receipt.id}>
-                <a
-                  href={receipt.imageUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-3 rounded-2xl border border-border bg-surface p-3 transition-colors hover:border-primary/30"
-                >
-                  <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-surface-2">
-                    <Image
-                      src={receipt.imageUrl}
-                      alt="Recibo"
-                      fill
-                      sizes="64px"
-                      className="object-cover"
-                    />
-                  </div>
-                  <div className="flex min-w-0 flex-1 flex-col justify-center gap-0.5">
-                    <div className="flex items-center justify-between gap-2">
-                      <span
-                        className={clsx(
-                          "flex items-center gap-1 truncate text-[15px] font-semibold",
-                          receipt.type === "venda"
-                            ? "text-success"
-                            : "text-danger",
-                        )}
-                      >
-                        {receipt.type === "venda" ? (
-                          <TrendingUp className="h-3.5 w-3.5 shrink-0" />
-                        ) : (
-                          <TrendingDown className="h-3.5 w-3.5 shrink-0" />
-                        )}
-                        {formatCurrencyKz(receipt.amount)}
-                      </span>
-                      <span className="shrink-0 truncate rounded-full bg-surface-2 px-2 py-0.5 text-[11px] text-muted-foreground">
-                        {receipt.uploaderName}
-                      </span>
-                    </div>
-                    <span className="flex items-center gap-1.5 text-[13px] text-muted-foreground">
-                      {formatDate(receipt.receiptDate ?? receipt.createdAt)}
-                      <span className="text-muted">·</span>
-                      {receipt.paymentMethod === "dinheiro"
-                        ? "Dinheiro"
-                        : "Banco"}
-                    </span>
-                    {receipt.note && (
-                      <span className="truncate text-[12.5px] text-muted">
-                        {receipt.note}
-                      </span>
-                    )}
-                    <span className="text-[11.5px] text-muted">
-                      Enviado em {formatDateTime(receipt.createdAt)}
-                    </span>
-                  </div>
-                </a>
-              </li>
-            ))}
-          </ul>
+          <ReceiptGrid
+            companyId={id}
+            initialReceipts={firstPage}
+            totalCount={totalReceipts}
+          />
         )}
       </div>
     </div>
