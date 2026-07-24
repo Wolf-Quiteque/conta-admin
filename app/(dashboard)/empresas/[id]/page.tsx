@@ -1,8 +1,15 @@
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { clsx } from "clsx";
 import { asc, desc, eq } from "drizzle-orm";
-import { ChevronLeft, Crown, Receipt as ReceiptIcon } from "lucide-react";
+import {
+  ChevronLeft,
+  Crown,
+  Receipt as ReceiptIcon,
+  TrendingDown,
+  TrendingUp,
+} from "lucide-react";
 import { db } from "@/lib/db/client";
 import { companies, receipts, users } from "@/lib/db/schema";
 import { formatCurrencyKz, formatDate, formatDateTime } from "@/lib/format";
@@ -44,6 +51,8 @@ export default async function EmpresaDetailPage({
         receiptDate: receipts.receiptDate,
         note: receipts.note,
         createdAt: receipts.createdAt,
+        type: receipts.type,
+        paymentMethod: receipts.paymentMethod,
         uploaderName: users.name,
       })
       .from(receipts)
@@ -52,10 +61,16 @@ export default async function EmpresaDetailPage({
       .orderBy(desc(receipts.createdAt)),
   ]);
 
-  const total = companyReceipts.reduce(
-    (sum, r) => sum + (r.amount ? parseFloat(r.amount) : 0),
-    0,
+  const totals = companyReceipts.reduce(
+    (acc, r) => {
+      const value = r.amount ? parseFloat(r.amount) : 0;
+      if (r.type === "venda") acc.vendas += value;
+      else acc.compras += value;
+      return acc;
+    },
+    { vendas: 0, compras: 0 },
   );
+  const saldo = totals.vendas - totals.compras;
 
   return (
     <div className="space-y-6">
@@ -111,7 +126,7 @@ export default async function EmpresaDetailPage({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
         <div className="rounded-2xl border border-border bg-surface p-4">
           <p className="text-[12.5px] text-muted-foreground">Membros</p>
           <p className="mt-1.5 text-xl font-semibold tracking-tight">
@@ -124,10 +139,27 @@ export default async function EmpresaDetailPage({
             {companyReceipts.length}
           </p>
         </div>
+        <div className="rounded-2xl border border-success/30 bg-success/10 p-4">
+          <p className="text-[12.5px] text-success/80">Vendas</p>
+          <p className="mt-1.5 truncate text-xl font-semibold tracking-tight text-success">
+            {formatCurrencyKz(totals.vendas)}
+          </p>
+        </div>
+        <div className="rounded-2xl border border-danger/30 bg-danger/10 p-4">
+          <p className="text-[12.5px] text-danger/80">Compras</p>
+          <p className="mt-1.5 truncate text-xl font-semibold tracking-tight text-danger">
+            {formatCurrencyKz(totals.compras)}
+          </p>
+        </div>
         <div className="col-span-2 rounded-2xl border border-border bg-surface p-4 sm:col-span-1">
-          <p className="text-[12.5px] text-muted-foreground">Valor total</p>
-          <p className="mt-1.5 text-xl font-semibold tracking-tight">
-            {formatCurrencyKz(total)}
+          <p className="text-[12.5px] text-muted-foreground">Saldo</p>
+          <p
+            className={clsx(
+              "mt-1.5 truncate text-xl font-semibold tracking-tight",
+              saldo >= 0 ? "text-success" : "text-danger",
+            )}
+          >
+            {formatCurrencyKz(saldo)}
           </p>
         </div>
       </div>
@@ -197,15 +229,31 @@ export default async function EmpresaDetailPage({
                   </div>
                   <div className="flex min-w-0 flex-1 flex-col justify-center gap-0.5">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-[15px] font-medium">
+                      <span
+                        className={clsx(
+                          "flex items-center gap-1 truncate text-[15px] font-semibold",
+                          receipt.type === "venda"
+                            ? "text-success"
+                            : "text-danger",
+                        )}
+                      >
+                        {receipt.type === "venda" ? (
+                          <TrendingUp className="h-3.5 w-3.5 shrink-0" />
+                        ) : (
+                          <TrendingDown className="h-3.5 w-3.5 shrink-0" />
+                        )}
                         {formatCurrencyKz(receipt.amount)}
                       </span>
                       <span className="shrink-0 truncate rounded-full bg-surface-2 px-2 py-0.5 text-[11px] text-muted-foreground">
                         {receipt.uploaderName}
                       </span>
                     </div>
-                    <span className="text-[13px] text-muted-foreground">
+                    <span className="flex items-center gap-1.5 text-[13px] text-muted-foreground">
                       {formatDate(receipt.receiptDate ?? receipt.createdAt)}
+                      <span className="text-muted">·</span>
+                      {receipt.paymentMethod === "dinheiro"
+                        ? "Dinheiro"
+                        : "Banco"}
                     </span>
                     {receipt.note && (
                       <span className="truncate text-[12.5px] text-muted">

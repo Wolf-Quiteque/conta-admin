@@ -25,6 +25,13 @@ export const companyStatusEnum = pgEnum("company_status", [
 // can only upload receipts.
 export const companyRoleEnum = pgEnum("company_role", ["admin", "gestor"]);
 
+// "venda" = money in, "compra" = money out.
+export const receiptTypeEnum = pgEnum("receipt_type", ["venda", "compra"]);
+export const paymentMethodEnum = pgEnum("payment_method", [
+  "dinheiro",
+  "banco",
+]);
+
 export const companies = pgTable("companies", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull(),
@@ -61,6 +68,8 @@ export const receipts = pgTable("receipts", {
   companyId: uuid("company_id")
     .notNull()
     .references(() => companies.id, { onDelete: "cascade" }),
+  type: receiptTypeEnum("type").notNull(),
+  paymentMethod: paymentMethodEnum("payment_method").notNull(),
   imageUrl: text("image_url").notNull(),
   imagePathname: text("image_pathname").notNull(),
   amount: numeric("amount", { precision: 12, scale: 2 }),

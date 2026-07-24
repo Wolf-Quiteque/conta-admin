@@ -1,5 +1,7 @@
 CREATE TYPE "public"."company_role" AS ENUM('admin', 'gestor');--> statement-breakpoint
 CREATE TYPE "public"."company_status" AS ENUM('pendente', 'aprovado', 'rejeitado');--> statement-breakpoint
+CREATE TYPE "public"."payment_method" AS ENUM('dinheiro', 'banco');--> statement-breakpoint
+CREATE TYPE "public"."receipt_type" AS ENUM('venda', 'compra');--> statement-breakpoint
 CREATE TYPE "public"."user_role" AS ENUM('cliente', 'admin');--> statement-breakpoint
 CREATE TABLE "companies" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
@@ -15,6 +17,8 @@ CREATE TABLE "receipts" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"user_id" uuid NOT NULL,
 	"company_id" uuid NOT NULL,
+	"type" "receipt_type" NOT NULL,
+	"payment_method" "payment_method" NOT NULL,
 	"image_url" text NOT NULL,
 	"image_pathname" text NOT NULL,
 	"amount" numeric(12, 2),
