@@ -6,6 +6,7 @@ import { clsx } from "clsx";
 import { TrendingDown, TrendingUp } from "lucide-react";
 import { formatCurrencyKz, formatDate, formatDateTime, truncateText } from "@/lib/format";
 import { Modal } from "@/components/ui/modal";
+import { ZoomableImage } from "@/components/ui/zoomable-image";
 import { loadMoreCompanyReceipts } from "@/app/(dashboard)/empresas/actions";
 
 type ReceiptRow = {
@@ -134,15 +135,11 @@ export function ReceiptGrid({
 
       {selected && (
         <Modal onClose={() => setSelected(null)}>
-          <div className="relative aspect-square w-full bg-surface-2 sm:aspect-video">
-            <Image
-              src={selected.imageUrl}
-              alt="Recibo"
-              fill
-              sizes="(max-width: 640px) 100vw, 512px"
-              className="object-contain"
-            />
-          </div>
+          <ZoomableImage
+            src={selected.imageUrl}
+            alt="Recibo"
+            className="aspect-square w-full sm:aspect-video"
+          />
           <div className="space-y-3 p-5">
             <div className="flex items-center justify-between gap-2">
               <span
