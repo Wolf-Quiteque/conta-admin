@@ -1,17 +1,21 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { companies, receipts, users } from "@/lib/db/schema";
 import { verifySession } from "@/lib/auth/dal";
 import { RECEIPTS_PAGE_SIZE } from "@/lib/pagination";
+import { isValidISODate, receiptDateFilter } from "@/lib/receipt-date-filter";
 
 export async function loadMoreCompanyReceipts(
   companyId: string,
+  date: string,
   offset: number,
 ) {
   await verifySession();
+
+  if (!isValidISODate(date)) return [];
 
   return db
     .select({
@@ -27,7 +31,7 @@ export async function loadMoreCompanyReceipts(
     })
     .from(receipts)
     .innerJoin(users, eq(users.id, receipts.userId))
-    .where(eq(receipts.companyId, companyId))
+    .where(and(eq(receipts.companyId, companyId), receiptDateFilter(date)))
     .orderBy(desc(receipts.createdAt), desc(receipts.id))
     .limit(RECEIPTS_PAGE_SIZE)
     .offset(Math.max(0, offset));

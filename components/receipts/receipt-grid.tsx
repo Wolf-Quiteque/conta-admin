@@ -4,7 +4,8 @@ import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { clsx } from "clsx";
 import { TrendingDown, TrendingUp } from "lucide-react";
-import { formatCurrencyKz, formatDate, formatDateTime } from "@/lib/format";
+import { formatCurrencyKz, formatDate, formatDateTime, truncateText } from "@/lib/format";
+import { Modal } from "@/components/ui/modal";
 import { loadMoreCompanyReceipts } from "@/app/(dashboard)/empresas/actions";
 
 type ReceiptRow = {
@@ -19,17 +20,22 @@ type ReceiptRow = {
   uploaderName: string;
 };
 
+const NOTE_MAX_LENGTH = 20;
+
 export function ReceiptGrid({
   companyId,
+  date,
   initialReceipts,
   totalCount,
 }: {
   companyId: string;
+  date: string;
   initialReceipts: ReceiptRow[];
   totalCount: number;
 }) {
   const [items, setItems] = useState(initialReceipts);
   const [loading, setLoading] = useState(false);
+  const [selected, setSelected] = useState<ReceiptRow | null>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
   const loadingRef = useRef(false);
 
@@ -46,7 +52,7 @@ export function ReceiptGrid({
         loadingRef.current = true;
         setLoading(true);
 
-        loadMoreCompanyReceipts(companyId, items.length)
+        loadMoreCompanyReceipts(companyId, date, items.length)
           .then((more) => {
             if (more.length > 0) {
               setItems((prev) => [...prev, ...more]);
@@ -62,18 +68,17 @@ export function ReceiptGrid({
 
     observer.observe(node);
     return () => observer.disconnect();
-  }, [hasMore, items.length, companyId]);
+  }, [hasMore, items.length, companyId, date]);
 
   return (
     <>
       <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {items.map((receipt) => (
           <li key={receipt.id}>
-            <a
-              href={receipt.imageUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-3 rounded-2xl border border-border bg-surface p-3 transition-colors hover:border-primary/30"
+            <button
+              type="button"
+              onClick={() => setSelected(receipt)}
+              className="flex w-full items-center gap-3 rounded-2xl border border-border bg-surface p-3 text-left transition-colors hover:border-primary/30"
             >
               <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-surface-2">
                 <Image
@@ -110,14 +115,11 @@ export function ReceiptGrid({
                 </span>
                 {receipt.note && (
                   <span className="truncate text-[12.5px] text-muted">
-                    {receipt.note}
+                    {truncateText(receipt.note, NOTE_MAX_LENGTH)}
                   </span>
                 )}
-                <span className="text-[11.5px] text-muted">
-                  Enviado em {formatDateTime(receipt.createdAt)}
-                </span>
               </div>
-            </a>
+            </button>
           </li>
         ))}
       </ul>
@@ -128,6 +130,61 @@ export function ReceiptGrid({
             <span className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
           )}
         </div>
+      )}
+
+      {selected && (
+        <Modal onClose={() => setSelected(null)}>
+          <div className="relative aspect-square w-full bg-surface-2 sm:aspect-video">
+            <Image
+              src={selected.imageUrl}
+              alt="Recibo"
+              fill
+              sizes="(max-width: 640px) 100vw, 512px"
+              className="object-contain"
+            />
+          </div>
+          <div className="space-y-3 p-5">
+            <div className="flex items-center justify-between gap-2">
+              <span
+                className={clsx(
+                  "flex items-center gap-1.5 text-xl font-semibold",
+                  selected.type === "venda" ? "text-success" : "text-danger",
+                )}
+              >
+                {selected.type === "venda" ? (
+                  <TrendingUp className="h-4.5 w-4.5" />
+                ) : (
+                  <TrendingDown className="h-4.5 w-4.5" />
+                )}
+                {formatCurrencyKz(selected.amount)}
+              </span>
+              <span className="rounded-full bg-surface-2 px-2.5 py-1 text-[12px] text-muted-foreground">
+                {selected.uploaderName}
+              </span>
+            </div>
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13.5px] text-muted-foreground">
+              <span>{formatDate(selected.receiptDate ?? selected.createdAt)}</span>
+              <span className="text-muted">·</span>
+              <span>
+                {selected.paymentMethod === "dinheiro" ? "Dinheiro" : "Banco"}
+              </span>
+            </div>
+            {selected.note && (
+              <p className="text-[13.5px] text-foreground">{selected.note}</p>
+            )}
+            <p className="text-[12px] text-muted">
+              Enviado em {formatDateTime(selected.createdAt)}
+            </p>
+            <a
+              href={selected.imageUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block text-[13px] font-medium text-primary"
+            >
+              Abrir imagem original
+            </a>
+          </div>
+        </Modal>
       )}
     </>
   );

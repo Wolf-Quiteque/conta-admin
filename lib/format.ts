@@ -33,3 +33,13 @@ export function formatDateTime(value: string | Date | null | undefined) {
     minute: "2-digit",
   }).format(date);
 }
+
+export function truncateText(text: string, maxLength: number) {
+  if (text.length <= maxLength) return text;
+  return text.slice(0, maxLength).trimEnd() + "…";
+}
+
+/** Today's date as a "YYYY-MM-DD" string, matching <input type="date"> and the DB's date column. */
+export function todayISODate() {
+  return new Date().toISOString().slice(0, 10);
+}

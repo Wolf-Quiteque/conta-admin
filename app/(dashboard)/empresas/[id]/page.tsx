@@ -1,23 +1,32 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { clsx } from "clsx";
-import { asc, count, desc, eq, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, sql } from "drizzle-orm";
 import { ChevronLeft, Crown, Receipt as ReceiptIcon } from "lucide-react";
 import { db } from "@/lib/db/client";
 import { companies, receipts, users } from "@/lib/db/schema";
-import { formatCurrencyKz, formatDate } from "@/lib/format";
+import { formatCurrencyKz, formatDate, todayISODate } from "@/lib/format";
+import { isValidISODate, receiptDateFilter } from "@/lib/receipt-date-filter";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { ReceiptGrid } from "@/components/receipts/receipt-grid";
+import { DateFilter } from "@/components/receipts/date-filter";
 import { approveCompany, rejectCompany } from "../actions";
 import { RECEIPTS_PAGE_SIZE } from "@/lib/pagination";
 
 export default async function EmpresaDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ date?: string }>;
 }) {
   const { id } = await params;
+  const { date: dateParam } = await searchParams;
+
+  const todayISO = todayISODate();
+  const date = isValidISODate(dateParam) ? dateParam : todayISO;
+  const dayFilter = and(eq(receipts.companyId, id), receiptDateFilter(date));
 
   const [company] = await db
     .select()
@@ -45,7 +54,7 @@ export default async function EmpresaDetailPage({
         compras: sql<string>`coalesce(sum(case when ${receipts.type} = 'compra' then ${receipts.amount} else 0 end), 0)`,
       })
       .from(receipts)
-      .where(eq(receipts.companyId, id)),
+      .where(dayFilter),
     db
       .select({
         id: receipts.id,
@@ -60,7 +69,7 @@ export default async function EmpresaDetailPage({
       })
       .from(receipts)
       .innerJoin(users, eq(users.id, receipts.userId))
-      .where(eq(receipts.companyId, id))
+      .where(dayFilter)
       .orderBy(desc(receipts.createdAt), desc(receipts.id))
       .limit(RECEIPTS_PAGE_SIZE),
   ]);
@@ -126,7 +135,7 @@ export default async function EmpresaDetailPage({
           </p>
         </div>
         <div className="rounded-2xl border border-border bg-surface p-4">
-          <p className="text-[12.5px] text-muted-foreground">Recibos</p>
+          <p className="text-[12.5px] text-muted-foreground">Recibos (dia)</p>
           <p className="mt-1.5 text-xl font-semibold tracking-tight">
             {totalReceipts}
           </p>
@@ -189,20 +198,27 @@ export default async function EmpresaDetailPage({
       </div>
 
       <div>
-        <h2 className="mb-3 text-[15px] font-semibold tracking-tight">
-          Recibos enviados
-        </h2>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-[15px] font-semibold tracking-tight">
+            Recibos enviados
+          </h2>
+          <DateFilter date={date} todayISO={todayISO} />
+        </div>
 
         {totalReceipts === 0 ? (
           <div className="flex flex-col items-center gap-2 rounded-3xl border border-dashed border-border py-16 text-center">
             <ReceiptIcon className="h-6 w-6 text-muted-foreground" />
             <p className="text-[13.5px] text-muted-foreground">
-              Esta empresa ainda não enviou recibos.
+              {date === todayISO
+                ? "Ainda não há recibos hoje."
+                : "Sem recibos nesta data."}
             </p>
           </div>
         ) : (
           <ReceiptGrid
+            key={date}
             companyId={id}
+            date={date}
             initialReceipts={firstPage}
             totalCount={totalReceipts}
           />
