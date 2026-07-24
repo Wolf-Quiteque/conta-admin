@@ -14,12 +14,21 @@ recibos que enviaram (com valor e data).
 
 1. Copie `.env.example` para `.env.local` e preencha:
    - `DATABASE_URL_UNPOOLED` — connection string do Neon (Vercel → Storage → Neon).
-   - `BLOB_READ_WRITE_TOKEN` — token do Vercel Blob (Vercel → Storage → Blob).
+   - `BLOB_READ_WRITE_TOKEN` — só é usado como *fallback* local. O código nunca
+     lê esta variável diretamente (`upload()`/`handleUpload()` são chamados
+     sem `token`), por isso em produção, se a loja Blob estiver ligada via
+     `BLOB_STORE_ID` + `BLOB_WEBHOOK_PUBLIC_KEY` (Vercel → Storage → Blob),
+     não precisa de configurar nada aqui — o `VERCEL_OIDC_TOKEN` é injetado
+     automaticamente pela Vercel em runtime e a biblioteca `@vercel/blob`
+     usa-o sozinha.
    - `SESSION_SECRET` — gerar com `openssl rand -base64 32`.
 
-   **Importante:** `DATABASE_URL_UNPOOLED` e `BLOB_READ_WRITE_TOKEN` devem ser os
-   mesmos usados no projeto `conta-clientes`, porque ambas as apps partilham
-   a mesma base de dados e o mesmo espaço de armazenamento.
+   **Importante:** `DATABASE_URL_UNPOOLED` deve ser o mesmo usado no projeto
+   `conta-clientes`, porque ambas as apps partilham a mesma base de dados.
+   Em produção, a Vercel pode expor esta variável com um prefixo específico
+   do projeto (ex.: `nawabus_cliene_conta_DATABASE_URL_UNPOOLED`) — o código
+   já trata isso (`lib/db/connection-string.ts`), não precisa de igualar os
+   nomes manualmente.
 
 2. Instale as dependências:
 
@@ -59,6 +68,8 @@ recibos que enviaram (com valor e data).
 
 ## Deploy
 
-Faça deploy como um projeto Vercel normal, com as três variáveis de ambiente
-acima configuradas em Production/Preview, ligadas ao mesmo recurso Neon e ao
-mesmo Blob Store usados pelo `conta-clientes`.
+Faça deploy como um projeto Vercel normal, ligado ao mesmo recurso Neon e à
+mesma loja Blob usados pelo `conta-clientes`, com `SESSION_SECRET` definido
+(cada app pode ter o seu próprio valor). `DATABASE_URL_UNPOOLED` e as
+variáveis do Blob costumam já vir configuradas automaticamente pelas
+integrações Vercel-Neon e Vercel-Blob.
