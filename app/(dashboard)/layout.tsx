@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { Building2, LogOut } from "lucide-react";
+import { Building2 } from "lucide-react";
 import { getCurrentAdmin } from "@/lib/auth/dal";
 import { logout } from "@/app/actions/auth";
+import { LogoutButton } from "@/components/ui/logout-button";
 
 export default async function DashboardLayout({
   children,
@@ -43,13 +44,7 @@ export default async function DashboardLayout({
               {admin.name}
             </span>
             <form action={logout}>
-              <button
-                type="submit"
-                aria-label="Sair"
-                className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-surface text-muted-foreground transition-colors hover:border-danger/40 hover:text-danger active:scale-95"
-              >
-                <LogOut className="h-4 w-4" />
-              </button>
+              <LogoutButton />
             </form>
           </div>
         </div>

@@ -12,6 +12,7 @@ import { db } from "@/lib/db/client";
 import { companies, receipts, users } from "@/lib/db/schema";
 import { formatCurrencyKz, formatDate } from "@/lib/format";
 import { buttonClasses } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { StatusBadge, type UserStatus } from "@/components/ui/status-badge";
 import { approveCompany, rejectCompany } from "./actions";
 
@@ -139,23 +140,17 @@ export default async function EmpresasPage({
                 {company.status !== "aprovado" && (
                   <form action={approveCompany}>
                     <input type="hidden" name="companyId" value={company.id} />
-                    <button
-                      type="submit"
-                      className={buttonClasses({ variant: "primary", size: "sm" })}
-                    >
+                    <SubmitButton variant="primary" size="sm">
                       Aprovar
-                    </button>
+                    </SubmitButton>
                   </form>
                 )}
                 {company.status !== "rejeitado" && (
                   <form action={rejectCompany}>
                     <input type="hidden" name="companyId" value={company.id} />
-                    <button
-                      type="submit"
-                      className={buttonClasses({ variant: "secondary", size: "sm" })}
-                    >
+                    <SubmitButton variant="secondary" size="sm">
                       Rejeitar
-                    </button>
+                    </SubmitButton>
                   </form>
                 )}
                 <Link

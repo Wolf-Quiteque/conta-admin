@@ -39,6 +39,7 @@ export default function EntrarPage() {
               autoComplete="email"
               placeholder="admin@exemplo.com"
               required
+              disabled={pending}
             />
             <FieldError>{state?.errors?.email?.[0]}</FieldError>
           </div>
@@ -51,6 +52,7 @@ export default function EntrarPage() {
               autoComplete="current-password"
               placeholder="••••••••"
               required
+              disabled={pending}
             />
             <FieldError>{state?.errors?.password?.[0]}</FieldError>
           </div>
