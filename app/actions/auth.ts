@@ -48,7 +48,7 @@ export async function login(
   }
 
   await createSession({ userId: user.id, role: user.role });
-  redirect("/utilizadores");
+  redirect("/empresas");
 }
 
 export async function logout() {

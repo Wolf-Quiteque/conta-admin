@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { LogOut, Users } from "lucide-react";
+import { Building2, LogOut } from "lucide-react";
 import { getCurrentAdmin } from "@/lib/auth/dal";
 import { logout } from "@/app/actions/auth";
 
@@ -30,11 +30,11 @@ export default async function DashboardLayout({
 
           <nav className="flex flex-1 items-center gap-1">
             <Link
-              href="/utilizadores"
+              href="/empresas"
               className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-[13.5px] font-medium text-foreground transition-colors hover:bg-surface-2"
             >
-              <Users className="h-4 w-4" />
-              Utilizadores
+              <Building2 className="h-4 w-4" />
+              Empresas
             </Link>
           </nav>
 

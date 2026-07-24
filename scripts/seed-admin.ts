@@ -24,7 +24,7 @@ async function main() {
   if (existing) {
     await db
       .update(users)
-      .set({ name, passwordHash, role: "admin", status: "aprovado" })
+      .set({ name, passwordHash, role: "admin" })
       .where(eq(users.id, existing.id));
     console.log(`Administrador atualizado: ${email}`);
   } else {
@@ -33,7 +33,6 @@ async function main() {
       email,
       passwordHash,
       role: "admin",
-      status: "aprovado",
     });
     console.log(`Administrador criado: ${email}`);
   }

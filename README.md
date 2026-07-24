@@ -1,7 +1,7 @@
 # NAWA Contas — Admin
 
-Painel de administração para aprovar contas de clientes e consultar todos os
-recibos que enviaram (com valor e data).
+Painel de administração para aprovar empresas e consultar todos os recibos
+enviados pelos seus membros (com valor e data).
 
 ## Stack
 
@@ -61,10 +61,16 @@ recibos que enviaram (com valor e data).
 
 ## Fluxo
 
-1. Novos clientes registam-se em `conta-clientes` e ficam **pendentes**.
-2. Em `/utilizadores`, aprove ou rejeite cada conta.
-3. Clique em "Ver" para consultar todos os recibos de um cliente (imagem,
+1. Uma empresa regista-se em `conta-clientes` (o primeiro utilizador fica
+   como dono/admin dessa empresa) e fica **pendente**.
+2. Em `/empresas`, aprove ou rejeite cada empresa.
+3. Clique em "Ver" para consultar a empresa: membros (com a sua função —
+   Admin ou Gestor) e todos os recibos enviados por qualquer membro (imagem,
    valor, data e nota), com o total acumulado.
+
+Depois de aprovada, membros com função **Admin** podem adicionar mais
+membros à empresa a partir de `conta-clientes` (`/equipa`); membros
+**Gestor** só podem enviar recibos.
 
 ## Deploy
 

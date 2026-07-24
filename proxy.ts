@@ -9,13 +9,13 @@ export async function proxy(req: NextRequest) {
 
   if (pathname === "/") {
     return NextResponse.redirect(
-      new URL(isAdmin ? "/utilizadores" : "/entrar", req.url),
+      new URL(isAdmin ? "/empresas" : "/entrar", req.url),
     );
   }
 
   if (pathname === "/entrar") {
     if (isAdmin) {
-      return NextResponse.redirect(new URL("/utilizadores", req.url));
+      return NextResponse.redirect(new URL("/empresas", req.url));
     }
     return NextResponse.next();
   }
