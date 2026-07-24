@@ -1,26 +1,165 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #fbf4ec;
+  --surface: #ffffff;
+  --surface-2: #f6ead9;
+  --foreground: #2b1d14;
+  --muted: #8a7362;
+  --muted-foreground: #6b5847;
+  --border: #ecdcc8;
+  --primary: #ff6a3d;
+  --primary-2: #ff9248;
+  --primary-foreground: #fffaf5;
+  --accent: #f4a340;
+  --accent-foreground: #2b1d14;
+  --success: #6c8c4b;
+  --success-foreground: #f4f9ee;
+  --danger: #d6483f;
+  --danger-foreground: #fff5f4;
+  --warning: #dd9a2e;
+  --warning-foreground: #2b1d14;
+  --ring: #ff6a3d;
 }
 
 @theme inline {
   --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
   --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-primary: var(--primary);
+  --color-primary-2: var(--primary-2);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-danger: var(--danger);
+  --color-danger-foreground: var(--danger-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-ring: var(--ring);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --animate-fade-up: fade-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-glow-pulse: glow-pulse 2.8s ease-in-out infinite;
+  --animate-scale-in: scale-in 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #150f0b;
+    --surface: #1f1710;
+    --surface-2: #261c14;
+    --foreground: #f5e9dd;
+    --muted: #a8927e;
+    --muted-foreground: #c2ac98;
+    --border: #362819;
+    --primary: #ff7a47;
+    --primary-2: #ffa35c;
+    --primary-foreground: #1a0f08;
+    --accent: #ffb454;
+    --accent-foreground: #1a0f08;
+    --success: #8fb06b;
+    --success-foreground: #10160a;
+    --danger: #e8746a;
+    --danger-foreground: #1a0a08;
+    --warning: #f2b857;
+    --warning-foreground: #1a0f08;
+    --ring: #ff8a5c;
+  }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes glow-pulse {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 0 color-mix(in oklab, var(--primary) 45%, transparent),
+      0 8px 30px -8px color-mix(in oklab, var(--primary) 70%, transparent);
+  }
+  50% {
+    box-shadow:
+      0 0 0 10px color-mix(in oklab, var(--primary) 0%, transparent),
+      0 8px 30px -4px color-mix(in oklab, var(--primary) 85%, transparent);
   }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+
+* {
+  border-color: var(--border);
+}
+
+::selection {
+  background: color-mix(in oklab, var(--primary) 30%, transparent);
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.aurora-bg {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.aurora-bg::before,
+.aurora-bg::after {
+  content: "";
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(70px);
+  opacity: 0.35;
+}
+
+.aurora-bg::before {
+  width: 22rem;
+  height: 22rem;
+  top: -8rem;
+  right: -6rem;
+  background: radial-gradient(circle, var(--primary) 0%, transparent 70%);
+}
+
+.aurora-bg::after {
+  width: 18rem;
+  height: 18rem;
+  bottom: -6rem;
+  left: -6rem;
+  background: radial-gradient(circle, var(--accent) 0%, transparent 70%);
 }
